@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class RentalService {
@@ -55,11 +54,14 @@ public class RentalService {
             if (!rental.getCustomer().getId().equals(customer.getId())) {
                 throw new RuntimeException("Rental with ID " + rental.getId() + " does not belong to customer with ID " + customer.getId());
             }
+            if (rental.getRentalFinish() != null) {
+                throw new RuntimeException("Rental with ID " + rental.getId() + " has already been finished");
+            }
             rental.setRentalFinish(nowDateTime);
         });
 
         Statement statement = getStatement(customer, existingRentals);
-
+        statement.calculateTotalCharge();
         rentalRepository.saveAll(existingRentals);
 
         return statement;
@@ -69,7 +71,10 @@ public class RentalService {
         Statement statement = new Statement();
 
         rentals.forEach(rental -> {
-            statement.addCharge(Statement.Charge.builder().charge(calculateCharge(rental)).build());
+            statement.addCharge(Statement.Charge.builder()
+                    .movieName(rental.getMovie().getName())
+                    .charge(calculateCharge(rental)).build()
+            );
         });
 
         statement.setCustomerName(customer.getName());

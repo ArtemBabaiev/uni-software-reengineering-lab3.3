@@ -18,6 +18,10 @@ public class Statement {
         chargeList.add(charge);
     }
 
+    public void calculateTotalCharge(){
+        totalCharge = chargeList.stream().mapToDouble(Charge::getCharge).sum();
+    }
+
     @Getter
     @Setter
     @Builder
